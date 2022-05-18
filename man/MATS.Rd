@@ -2,15 +2,50 @@
 % Please edit documentation in R/MATS.R
 \name{MATS}
 \alias{MATS}
-\title{MATS}
+\title{Multi-Ancestry TwaS}
 \usage{
-MATS(data)
+MATS(
+  Y,
+  xhat,
+  groups,
+  C,
+  P,
+  ev,
+  K,
+  categorical.vars = NULL,
+  trait_type = "binary",
+  np = 5
+)
 }
 \arguments{
-\item{data}{param description}
+\item{Y}{a vector of either continuous or binary trait values for n subjects.}
+
+\item{xhat}{a numeric vector of imputed gene expression for n subjects.}
+
+\item{groups}{a vector giving ancestral group labels for the n subjects. Must include at least 2 groups.}
+
+\item{C}{an optional matrix of covariates for the n subjects (n rows). If any of the covariates are categorical, specify their columnn names in the categorical.vars parameter. Dp not include a column for the intercept.}
+
+\item{P}{a matrix of genetic principal component on the n subjects (n rows). Must have at least nP PCs (at least nP columns). Columns should be orders PC1, PC2, ... and should not include any other columns aside from PCs (i.e., no subject ID column).}
+
+\item{ev}{a numeric vector of ordered eigenvalues for the genetic principal component. Should be the same length as the number of columns in P.}
+
+\item{K}{an n x n genetic covariance  matrix.}
+
+\item{categorical.vars}{a character vector of categorical variable column names in C (i.e., c("variable1", "variable2"))}
+
+\item{trait_type}{Either "Continuous" or "Binary", for continous or binary disease traits}
+
+\item{nP}{the number of principal components to include in all models to adjust for population stratification, and the number used in the full PC-interaction model.}
+
+\item{n}{The sample size used to estimate the disease GWAS summary data}
+
+\item{n_case}{The number of cases used in the disease GWAS sample. Required for trait_type = "Binary", default for Continuous trait is NULL}
+
+\item{n_control}{The number of controls used in the disease GWAS sample. Required for trait_type = "Binary", default for Continuous trait is NULL}
 }
 \description{
-Implement MATS
+This function implements Multi-Ancestry TWAS (MATS), based on the framework outlined in Knutson & Pan, 2022
 }
 \examples{
 MATS()
