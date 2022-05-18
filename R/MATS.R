@@ -186,5 +186,3 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
 
 }
 
-res = MATS(Y, xhat, groups, C, P, ev, K, categorical.vars, trait_type = "binary", np = 5)
-
