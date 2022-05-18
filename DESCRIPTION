@@ -1,10 +1,10 @@
 Package: MATS
-Title: What the Package Does (One Line, Title Case)
+Title: Multi-Ancestry TWAS
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+    person("Katherine", "Knutson", , "knuts828@umn.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-6091-4627"))
+Description: Implements the Multi-Ancestry TWAS proposed by Knutson and Pan (2022)
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
