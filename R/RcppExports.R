@@ -14,6 +14,7 @@ arma_mm <- function(m, m2) {
 #'
 #' @param Am numeric matrix
 #' @return Inversion of Am
+#' @import RcppArmadillo
 solve_mm <- function(Am) {
     .Call('_MATS_flowCalcCpp', PACKAGE = 'MATS', Am)
 }
