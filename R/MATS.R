@@ -59,10 +59,10 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
 
   names(P) <- paste0("P", 1:ncol(P))
   gmmat.data  <- data.frame(trait = Y, C, G = groups, P[,1:nP])
-  dummy_groups <- (as.data.frame(dummy_cols(data.frame(G = groups), select_columns = 'G')))[,-c(1:2)]
+  dummy_groups <- (as.data.frame(fastDummies::dummy_cols(data.frame(G = groups), select_columns = 'G')))[,-c(1:2)]
 
   for(var in categorical.vars){
-    x <- as.data.frame(dummy_cols(data.frame(as.factor(C[,var])))[,-c(1:2)]); names(x) <- paste0(var, ".", levels(C[,var])[-1])
+    x <- as.data.frame(fastDummies::dummy_cols(data.frame(as.factor(C[,var])))[,-c(1:2)]); names(x) <- paste0(var, ".", levels(C[,var])[-1])
     dummy_groups <- cbind(dummy_groups, x)
   }
 
@@ -109,7 +109,7 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
   pop.p.total <- pchisq(wald.total, df = length(parameter.vector.total), lower.tail = FALSE)
   pop.het.total <-  data.frame(pop.het.wald.total = wald.total, pop.het.df.total = length(parameter.vector.total), pop.het.p.total = pop.p.total)
 
-  pop.lik <- lrtest(null.mod.pop0, null.mod.pop1)
+  pop.lik <- lmtest::lrtest(null.mod.pop0, null.mod.pop1)
   pop.het.LRT <-  data.frame(pop.het.chisq.LRT = pop.lik$Chisq, pop.het.df.LRT = pop.lik$Df, pop.het.p.LRT = pop.lik$`Pr(>Chisq)`)[2, ]
 
   pop.index <- grep("E:", names(null.mod.pop1$coefficients))
@@ -135,7 +135,7 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
   tmp <- sweep(K, MARGIN=1, E*sqrt(diag(D.0.tau)), `*`)
 
   Mat <- (1/n)*sweep(tmp, MARGIN=2, E*sqrt(diag(D.0.tau)), `*`)
-  p.S.tau <- pQF(U.tau, Mat, neig=100,convolution.method="integration", method = "satterthwaite")
+  p.S.tau <- bigQF::pQF(U.tau, Mat, neig=100,convolution.method="integration", method = "satterthwaite")
 
   q.fisher <- -2*( log( p.S.tau ) + log( pop.p.total ) )
   MATS.p.overall <- 1-pchisq( q.fisher, df=4 )
@@ -157,7 +157,7 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
   w.inters <- w.inters %>% do.call("cbind", .); colnames(w.inters) <- paste0("w.inter", 1:nP)
   w.full.mod <- glm(trait ~ 1 + . + E*groups, data = data.frame(full.mod.data,w.inters), family = binomial(link = "logit"))
 
-  w.lrt <- lrtest(reduced_PCadj.mod, w.full.mod)
+  w.lrt <- lmtest::lrtest(reduced_PCadj.mod, w.full.mod)
 
   if(trait_type == "binary"){
     twas <- stats::glm(formula = Y ~ ., data = data.frame(Y, C, E, P[,1:nP]), family = binomial(link = "logit"))
