@@ -13,4 +13,8 @@ RoxygenNote: 7.1.2
 LinkingTo: Rcpp, RcppArmadillo
 Imports:
     Rcpp,
-    RcppArmadillo
+    RcppArmadillo,
+    dplyr,
+    lmtest,
+    bigQF,
+    fastDummies
