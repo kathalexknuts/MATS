@@ -19,6 +19,8 @@
 #' @import lmtest
 #' @import bigQF
 #' @import fastDummies
+#' @import Rcpp
+#' @import RcppArmadillo
 #' @export
 #' @examples
 #' MATS()
