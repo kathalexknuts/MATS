@@ -9,6 +9,7 @@ using namespace arma;
 //' @param m numeric matrix
 //' @param m2 numeric matrix
 //' @return matrix product of m and m2
+//' @export
 // [[Rcpp::export(arma_mm)]]
 arma::mat arma_mm(const arma::mat& m, const arma::mat& m2) {
   return m * m2;
