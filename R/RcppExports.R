@@ -6,6 +6,7 @@
 #' @param m numeric matrix
 #' @param m2 numeric matrix
 #' @return matrix product of m and m2
+#' @export
 arma_mm <- function(m, m2) {
     .Call('_MATS_arma_mm', PACKAGE = 'MATS', m, m2)
 }
@@ -14,6 +15,7 @@ arma_mm <- function(m, m2) {
 #'
 #' @param Am numeric matrix
 #' @return Inversion of Am
+#' @export
 solve_mm <- function(Am) {
     .Call('_MATS_flowCalcCpp', PACKAGE = 'MATS', Am)
 }

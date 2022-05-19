@@ -11,10 +11,7 @@
 #' @param categorical.vars a character vector of categorical variable column names in C (i.e., c("variable1", "variable2"))
 #' @param trait_type specificy either "binary" or "continuous" for the trait (Y) type.
 #' @param nP the number of principal components to include in all models to adjust for population stratification, and the number used in the full PC-interaction model.
-#' @param n The sample size used to estimate the disease GWAS summary data
 #' @param trait_type Either "Continuous" or "Binary", for continous or binary disease traits
-#' @param n_case The number of cases used in the disease GWAS sample. Required for trait_type = "Binary", default for Continuous trait is NULL
-#' @param n_control The number of controls used in the disease GWAS sample. Required for trait_type = "Binary", default for Continuous trait is NULL
 #' @import dplyr
 #' @import lmtest
 #' @import bigQF
