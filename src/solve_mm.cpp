@@ -1,5 +1,6 @@
 // [[Rcpp::depends(RcppArmadillo)]]
 #include <RcppArmadillo.h>
+#include <Rcpp.h>
 
 using namespace Rcpp;
 using namespace arma;
@@ -8,7 +9,6 @@ using namespace arma;
 //'
 //' @param Am numeric matrix
 //' @return Inversion of Am
-//' @import RcppArmadillo
 // [[Rcpp::export(solve_mm)]]
 Rcpp::List flowCalcCpp(const arma::mat &Am) {
   arma::mat B = inv(Am);
