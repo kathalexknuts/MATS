@@ -45,7 +45,6 @@ genotypes = rbind(genotypes.EUR, genotypes.AFR)[,1:p]
 
 ```
 n = nrow(genotypes)
-Y = rnorm(n)
 trait_type = "continuous"
 
 w = matrix(rnorm(p), ncol = 1)
@@ -67,7 +66,7 @@ K <- cov(t(scale(genotypes, center = TRUE, scale = TRUE)))
 pc_main_effects = TRUE
 ```
 
-# Run MATS
+# Run MATS for a continuous trait
 
 ```
 MATS(Y, xhat, groups, C, P, ev, K, categorical.vars, trait_type, np, pc_main_effects)
