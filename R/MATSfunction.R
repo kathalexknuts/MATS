@@ -4,14 +4,15 @@
 #' @param Y a vector of either continuous or binary trait values for n subjects.
 #' @param xhat a numeric vector of imputed gene expression for n subjects.
 #' @param groups a vector giving ancestral group labels for the n subjects. Must include at least 2 groups.
-#' @param C an optional matrix of covariates for the n subjects (n rows). If any of the covariates are categorical, specify their columnn names in the categorical.vars parameter. Dp not include a column for the intercept.
-#' @param P a matrix of genetic principal component on the n subjects (n rows). Must have at least nP PCs (at least nP columns). Columns should be orders PC1, PC2, ... and should not include any other columns aside from PCs (i.e., no subject ID column).
+#' @param C an optional matrix of covariates for the n subjects (n rows). If any of the covariates are categorical, specify their columnn names in the categorical.vars parameter. Do not include a column for the intercept.
+#' @param P a matrix of genetic principal component on the n subjects (n rows). Must have at least nP PxfCs (at least nP columns). Columns should be orders PC1, PC2, ... and should not include any other columns aside from PCs (i.e., no subject ID column).
 #' @param ev a numeric vector of ordered eigenvalues for the genetic principal component. Should be the same length as the number of columns in P.
 #' @param K an n x n genetic covariance  matrix.
 #' @param categorical.vars a character vector of categorical variable column names in C (i.e., c("variable1", "variable2"))
 #' @param trait_type specificy either "binary" or "continuous" for the trait (Y) type.
 #' @param nP the number of principal components to include in all models to adjust for population stratification, and the number used in the full PC-interaction model.
 #' @param trait_type Either "Continuous" or "Binary", for continous or binary disease traits
+#' @param pc_main_effects TRUE or FALSE, specifying whether to include the top nP PCs as main effects
 #' @import dplyr
 #' @import lmtest
 #' @import bigQF
@@ -22,7 +23,7 @@
 #' @examples
 #' MATS()
 
-MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_type = "binary", np = 5){
+MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_type = "binary", np = 5, pc_main_effects = FALSE){
 
   if(sum(c(missing(Y), missing(xhat), missing(groups), missing(P), missing(ev), missing(K))) > 0){
     cat("At least one of the arguments Y, xhat, group, P, ev, or K is missing \n")
@@ -54,8 +55,24 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
 
   cat("Did you confirm the the subject order of Y, xhat, groups, K (cols and rows), P, and C are all the same? If not, results will be misleading!")
 
-  names(P) <- paste0("P", 1:ncol(P))
-  gmmat.data  <- data.frame(trait = Y, C, G = groups, P[,1:nP])
+  if(trait_type == "binary"){
+    Y = as.character(Y)
+  }else{
+    Y = as.numeric(Y)
+  }
+
+  C=as.data.frame(C)
+  numeric.vars=which(!(colnames(C) %in% categorical.vars))
+  C[,numeric.vars]=apply(as.matrix(C[,numeric.vars], ncol = length(numeric.vars)), 2, as.numeric)
+
+  colnames(P) <- paste0("P", 1:ncol(P))
+
+  if(pc_main_effects == FALSE){
+    gmmat.data  <- data.frame(trait = Y, C, G = groups)
+  }else{
+    gmmat.data  <- data.frame(trait = Y, C, G = groups, P[,1:nP])
+  }
+
   dummy_groups <- (as.data.frame(fastDummies::dummy_cols(data.frame(G = groups), select_columns = 'G')))[,-c(1:2)]
 
   for(var in categorical.vars){
@@ -66,9 +83,9 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
   null.mod.C <- apply(list(intercept = rep(1, nrow(gmmat.data)), gmmat.data %>% dplyr::select(-G, -categorical.vars), dummy_groups) %>% do.call("cbind", .), 2, as.numeric)
 
   if(trait_type == "binary"){
-    mod0 <- glm(trait ~ 1 + ., data = gmmat.data, family = binomial(link = "logit"))
+    mod0 <- glm(trait ~ 1 + . - G, data = gmmat.data, family = binomial(link = "logit"))
   }else{
-    mod0 <- glm(trait ~ 1 + ., data = gmmat.data, family = gaussian(link = "identity"))
+    mod0 <- glm(trait ~ 1 + . - G, data = gmmat.data, family = gaussian(link = "identity"))
   }
 
   n <- dim(C)[1] #number of samples
@@ -91,11 +108,11 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
   Ediag <- diag(nrow(E)); diag(Ediag) <- E #set up matrix for GLMM version
 
   if(trait_type == "binary"){
-    null.mod.pop0 <- glm(trait ~ 1 + ., data = gmmat.data %>% mutate(E = E), family = binomial(link = "logit"))
-    null.mod.pop1 <- glm(trait ~ 1 + . + E*groups, data = gmmat.data %>% mutate(E = E), family = binomial(link = "logit"))
+    null.mod.pop0 <- glm(trait ~ 1 + . - G, data = gmmat.data %>% mutate(E = E), family = binomial(link = "logit"))
+    null.mod.pop1 <- glm(trait ~ 1 + . + E*groups - G, data = gmmat.data %>% mutate(E = E), family = binomial(link = "logit"))
   }else{
-    null.mod.pop0 <- glm(trait ~ 1 + ., data = gmmat.data %>% mutate(E = E), family = gaussian(link = "identity"))
-    null.mod.pop1 <- glm(trait ~ 1 + . + E*groups, data = gmmat.data %>% mutate(E = E), family = gaussian(link = "identity"))
+    null.mod.pop0 <- glm(trait ~ 1 + . - G, data = gmmat.data %>% mutate(E = E), family = gaussian(link = "identity"))
+    null.mod.pop1 <- glm(trait ~ 1 + . + E*groups - G, data = gmmat.data %>% mutate(E = E), family = gaussian(link = "identity"))
   }
 
   pop.index.total <- c(grep(":E", names(null.mod.pop1$coefficients)), which( names(null.mod.pop1$coefficients) == "E"))
@@ -117,14 +134,18 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
   pop.p <- pchisq(wald, df = length(parameter.vector), lower.tail = FALSE)
   pop.het <-  data.frame(pop.het.wald = wald, pop.het.df = length(parameter.vector), pop.het.p = pop.p)
 
-  X.shared <- as.matrix(cbind(E, E*dummy_groups[,3:ncol(dummy_groups)]))
+  #X.shared <- as.matrix(cbind(E, E*dummy_groups[,3:ncol(dummy_groups)]))
   Delta.alpha <- MATS:::arma_mm(MATS:::arma_mm(t(E), Delta.alpha1), E)
   S.alpha <- MATS:::arma_mm(t(E ), matrix((Y - mu.mod0), ncol = 1))
   U.alpha <- t(S.alpha^2)/Delta.alpha
   p.U.alpha <- 1 - stats::pchisq(U.alpha, df = dim(E)[2])
 
   mu.0.tau <- null.mod.pop1$fitted.value #mu hat under H0: tau = 0
-  d.0.tau <- mu.0.tau * (1 - mu.0.tau) # estimated variances under H0: tau = 0
+  if(trait_type == "binary"){
+    d.0.tau <- mu.0.tau * (1 - mu.0.tau) # estimated variances under H0: tau = 0
+  }else{
+    d.0.tau <- rep((1/n)*sum((Y - mu.0.tau)^2), n)
+  }
   D.0.tau <- diag(d.0.tau) #estimated diagonal covariance matrix of Y under H0: tau = 0 , n x
   res.0.tau <- resid <- Y - mu.0.tau #residuals under H0: tau = 0
   U.tau <- (1/n)*MATS:::arma_mm(MATS:::arma_mm(matrix(E*resid, nrow = 1), K), matrix(E*resid, ncol = 1))
@@ -141,9 +162,9 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
   full.mod.data <- cbind(gmmat.data %>% mutate(E = E), P[, 1:nP])
 
   if(trait_type == "binary"){
-    reduced_PCadj.mod <- glm(trait ~ 1 + . + E*groups, data = data.frame(full.mod.data), family = binomial(link = "logit"))
+    reduced_PCadj.mod <- glm(trait ~ 1 + . + E*groups - G, data = data.frame(full.mod.data), family = binomial(link = "logit"))
   }else{
-    reduced_PCadj.mod <- glm(trait ~ 1 + . + E*groups, data = data.frame(full.mod.data), family = gaussian(link = "identity"))
+    reduced_PCadj.mod <- glm(trait ~ 1 + . + E*groups - G, data = data.frame(full.mod.data), family = gaussian(link = "identity"))
   }
 
 
@@ -152,7 +173,12 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
     w.inters[[length(w.inters) + 1]] <- full.mod.data[,"E"] * full.mod.data[,col] * sqrt(ev[as.numeric(gsub("P", "", col))])
   }
   w.inters <- w.inters %>% do.call("cbind", .); colnames(w.inters) <- paste0("w.inter", 1:nP)
-  w.full.mod <- glm(trait ~ 1 + . + E*groups, data = data.frame(full.mod.data,w.inters), family = binomial(link = "logit"))
+
+  if(trait_type == "binary"){
+    w.full.mod <- glm(trait ~ 1 + . + E*groups - G, data = data.frame(full.mod.data,w.inters), family = binomial(link = "logit"))
+  }else{
+    w.full.mod <- glm(trait ~ 1 + . + E*groups - G, data = data.frame(full.mod.data,w.inters), family = gaussian(link = "identity"))
+  }
 
   w.lrt <- lmtest::lrtest(reduced_PCadj.mod, w.full.mod)
 
@@ -164,17 +190,22 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
 
   final.MATS.summary = data.frame(overall.expression.p = MATS.p.overall, indiv.het.S = U.tau, indiv.het.p = p.S.tau, pop.het.S = wald, pop.het.p = pop.p)
 
-  if(MATS.p.overall > 0.05){
-    recommended.model = "There is no expression effect."
-  }else if(p.S.tau < 0.05 & pop.p < 0.05){
+  if(is.na(MATS.p.overall)){
+    recommended.model = "NAs were produced"
+  }else{
+    if(MATS.p.overall > 0.05){
+      recommended.model = "There is no expression effect."
+    }else if(p.S.tau < 0.05 & pop.p < 0.05){
       recommended.model = "There is evidence of individual and population-level heterogeneity. Use the full model with PC-interactions."
-  }else if(p.S.tau < 0.05 & pop.p > 0.05){
+    }else if(p.S.tau < 0.05 & pop.p > 0.05){
       recommended.model = "There is evidence of individual-level heterogeneity. Use the full model with PC-interactions to assess whether population-level heterogeneity is also present."
-  }else if(p.S.tau > 0.05 & pop.p < 0.05){
+    }else if(p.S.tau > 0.05 & pop.p < 0.05){
       recommended.model = "There is evidence of population-level heterogeneity but not individual-level heterogeneity. Use the reduced model with population-specific expression effects."
-  }else if(p.S.tau > 0.05 & pop.p > 0.05){
+    }else if(p.S.tau > 0.05 & pop.p > 0.05){
       recommended.model = "There is no evidence heterogeneity. Use standard TWAS."
+    }
   }
+
 
   cat("Done! \n")
   cat(recommended.model, "\n")
