@@ -67,7 +67,7 @@ K <- cov(t(scale(genotypes, center = TRUE, scale = TRUE)))
 pc_main_effects = TRUE
 ```
 
-#Run MATS
+# Run MATS
 
 ```
 MATS(Y, xhat, groups, C, P, ev, K, categorical.vars, trait_type, np, pc_main_effects)
