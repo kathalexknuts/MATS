@@ -79,7 +79,7 @@ Y = 0.05 + 0.1*xhat + xhat*ifelse(groups == "AFR", 0, 0.1) + rnorm(n)
 MATS(Y, xhat, groups, C, P, ev, K, categorical.vars, trait_type, np, pc_main_effects)
 ```
 
-# Run MATS for a continuous trait
+# Run MATS for a binary trait
 
 ```
 logit_pi = 0.05 + 0.1*xhat + xhat*ifelse(groups == "AFR", 0, 0.1)
