@@ -55,11 +55,7 @@ MATS <- function(Y, xhat, groups, C, P, ev, K, categorical.vars = NULL, trait_ty
 
   cat("Did you confirm the the subject order of Y, xhat, groups, K (cols and rows), P, and C are all the same? If not, results will be misleading!")
 
-  if(trait_type == "binary"){
-    Y = as.character(Y)
-  }else{
-    Y = as.numeric(Y)
-  }
+  Y = as.numeric(Y)
 
   C=as.data.frame(C)
   numeric.vars=which(!(colnames(C) %in% categorical.vars))
