@@ -1,6 +1,13 @@
 # MATS: Example
 
-Here, we provide a quick example using the MATS package for a continuous outcome.
+Here, we provide a quick example using the MATS package for a continuous and binary outcome.
+
+### Install MATS
+
+```
+library("remotes")
+remotes::install_github("kathalexknuts/MATS")
+```
 
 ### Simulate Genotypes
 First, we simulate genotype data from 2 populations (EUR and AFR) using the sim1000G package.
@@ -45,7 +52,6 @@ genotypes = rbind(genotypes.EUR, genotypes.AFR)[,1:p]
 
 ```
 n = nrow(genotypes)
-trait_type = "continuous"
 
 w = matrix(rnorm(p), ncol = 1)
 xhat = genotypes %*% w
@@ -55,8 +61,6 @@ Sex=sample(c("F", "M"), n, replace = TRUE)
 Age=as.numeric(floor(runif(n, 30, 100)))
 C = as.matrix(data.frame(Sex, Age))
 categorical.vars = c("Sex")
-
-Y = 0.05 + 0.1*xhat + xhat*ifelse(groups == "AFR", 0, 0.1) + rnorm(n) 
 
 nP = 2
 P <- prcomp(genotypes, center = TRUE, scale = TRUE)$x
@@ -69,6 +73,20 @@ pc_main_effects = TRUE
 # Run MATS for a continuous trait
 
 ```
+trait_type = "continuous"
+Y = 0.05 + 0.1*xhat + xhat*ifelse(groups == "AFR", 0, 0.1) + rnorm(n) 
+
+MATS(Y, xhat, groups, C, P, ev, K, categorical.vars, trait_type, np, pc_main_effects)
+```
+
+# Run MATS for a continuous trait
+
+```
+logit_pi = 0.05 + 0.1*xhat + xhat*ifelse(groups == "AFR", 0, 0.1)
+pi = 1/(1 + exp(-1*logit_pi))
+Y = sapply(pi, function(x){rbinom(1, 1, x)})
+trait_type = "binary"
+
 MATS(Y, xhat, groups, C, P, ev, K, categorical.vars, trait_type, np, pc_main_effects)
 ```
 
